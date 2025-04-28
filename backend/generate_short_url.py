@@ -6,14 +6,40 @@ from sqlalchemy.orm import sessionmaker
 from datetime import datetime
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
+from sqlalchemy.exc import OperationalError
+import time
 import hashlib
 import redis
 import json
+import os
 
 
 
-redis_client = redis.StrictRedis(host='localhost', port=6379, db=0)
-engine = create_engine("mysql+mysqlconnector://root:admin123@localhost:3306/short_url", echo=True)
+redis_client = redis.StrictRedis(
+    host=os.getenv('REDIS_HOST', 'redis'),  # default to 'redis' if env var not set
+    port=os.getenv('REDIS_PORT', '3306'),
+    db=0
+)
+
+db_user = os.getenv('MYSQL_USER', 'root')
+db_password = os.getenv('MYSQL_PASSWORD', 'admin123')
+db_host = os.getenv('MYSQL_HOST', 'mysql')
+db_port = os.getenv('MYSQL_PORT', '3306')
+db_name = os.getenv('MYSQL_DB', 'short_url')
+
+for _ in range(10):  # try 10 times
+    try:
+        engine = create_engine(f"mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}", echo=True)
+        connection = engine.connect()
+        connection.close()
+        print("✅ MySQL is ready!")
+        break
+    except OperationalError:
+        print("⏳ Waiting for MySQL...")
+        time.sleep(3)
+else:
+    raise Exception("❌ Could not connect to MySQL after multiple attempts.")
+
 app = FastAPI()
 
 app.add_middleware(

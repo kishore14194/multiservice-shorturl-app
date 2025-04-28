@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  # Frontend (Next.js)
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    environment:
+      - NEXT_PUBLIC_API_URL=http://backend:8000
+
+  # MySQL
+  mysql:
+    image: mysql:8
+    environment:
+      MYSQL_ROOT_PASSWORD: admin123
+      MYSQL_DATABASE: short_url
+    ports:
+      - "3307:3306"
+    networks:
+      - app-network
+
+  # Redis
+  redis:
+    image: redis:latest
+    ports:
+      - "6380:6379"
+    networks:
+      - app-network
+
+  # Backend (FastAPI)
+  backend:
+    build: ./backend
+    ports:
+      - "8000:8000"
+    depends_on:
+      - mysql
+      - redis
+    environment:
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=admin123
+      - MYSQL_HOST=mysql
+      - MYSQL_PORT=3306
+      - MYSQL_DB=short_url
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
