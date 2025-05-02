@@ -23,12 +23,13 @@ redis_client = redis.StrictRedis(
 
 db_user = os.getenv('MYSQL_USER', 'root')
 db_password = os.getenv('MYSQL_PASSWORD', 'admin123')
-db_host = os.getenv('MYSQL_HOST', 'mysql')
+db_host = os.getenv('MYSQL_HOST', 'localhost')
 db_port = os.getenv('MYSQL_PORT', '3306')
 db_name = os.getenv('MYSQL_DB', 'short_url')
 
 for _ in range(10):  # try 10 times
     try:
+        print(f"Conn url: mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}")
         engine = create_engine(f"mysql+mysqlconnector://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}", echo=True)
         connection = engine.connect()
         connection.close()
